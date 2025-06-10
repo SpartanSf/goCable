@@ -17,6 +17,8 @@ sudo apt install vlc libvlc-dev
 
 On Linux (I've tested on Ubuntu Raspberry Pi OS) you may need to prepend `DISPLAY=:0.0`, e.g. `go run cmds/cli/main.go server --path "./local/path/to/folder/of/videos"`
 
+In some cases, you might need to run: `go get github.com/adrg/libvlc-go/v3@none && go mod tidy` to fix a vlc issue.
+
 ### Interact with the Server via the Client
 #### View what's currently playing
 `go run cmds/cli/main.go client live`
