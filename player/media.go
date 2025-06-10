@@ -7,6 +7,7 @@ import (
 	"path"
 	"path/filepath"
 	"sync"
+	"fmt"
 )
 
 type MediaListSortStrategy interface {
@@ -33,14 +34,15 @@ func NewMediaList(list []string, sortStrat MediaListSortStrategy) (*MediaList, e
 		return nil, errors.New("need media")
 	}
 	ml := &MediaList{
-		list:         list,
+		list:         append([]string(nil), list...),
+		nextList:     append([]string(nil), list...),
 		SortStrategy: sortStrat,
 	}
-	copy(ml.nextList, list)
 	ml.SortStrategy.Sort(ml.list)
 	ml.SortStrategy.Sort(ml.nextList)
 	return ml, nil
 }
+
 
 func (ml *MediaList) All() []string {
 	return ml.list
@@ -55,24 +57,47 @@ func (ml *MediaList) Current() string {
 func (ml *MediaList) Next() string {
 	ml.mu.Lock()
 	defer ml.mu.Unlock()
-	if ml.current+1 > len(ml.list) {
+
+	if ml.current+1 >= len(ml.list) {
+		if len(ml.nextList) == 0 {
+			fmt.Println("[debug] Next() called, but nextList is empty")
+			return ""
+		}
 		return ml.nextList[0]
 	}
 	return ml.list[ml.current+1]
 }
 
+
 func (ml *MediaList) Advance() string {
 	ml.mu.Lock()
 	defer ml.mu.Unlock()
-	if ml.current+1 > len(ml.list) {
+
+	if ml.current+1 >= len(ml.list) {
+		if len(ml.nextList) == 0 {
+			fmt.Println("[debug] MediaList.Advance: nextList is empty, staying at current index")
+			ml.current = 0
+			if len(ml.list) == 0 {
+				return ""
+			}
+			return ml.list[ml.current]
+		}
+
 		ml.list, ml.nextList = ml.nextList, ml.list
 		ml.SortStrategy.Sort(ml.nextList)
 		ml.current = 0
 	} else {
 		ml.current++
 	}
+
+	if ml.current >= len(ml.list) {
+		fmt.Println("[debug] MediaList.Advance: current index out of bounds after increment")
+		return ""
+	}
+
 	return ml.list[ml.current]
 }
+
 
 var VideoFiles map[string]struct{} = map[string]struct{}{
 	".avi": {},
