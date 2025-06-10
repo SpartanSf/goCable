@@ -14,7 +14,7 @@ type VLCPlayer struct {
 }
 
 func (p *VLCPlayer) Init() error {
-	err := vlc.Init("--quiet")
+	err := vlc.Init("--quiet", "--vout=x11", "--no-video-title-show", "--avcodec-hw=none")
 	if err != nil {
 		return err
 	}
